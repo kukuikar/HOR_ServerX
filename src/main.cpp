@@ -6,7 +6,8 @@
 #include <AsyncElegantOTA.h>
 #include <SPIFFS.h>
 #include <GParser.h>
- 
+#include <FastBot.h>
+
 #define MKD_Guest
 #ifdef MKD_Guest
 const char *ssid = "MKD-Guest";
@@ -18,6 +19,12 @@ const char *password = "123456789";
 
 #define DEBUG
 #define SOFTAP
+// https://api.telegram.org/bot6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38/getUpdates
+#define BOT_TOKEN "6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38"
+//#define CHAT_ID "213100274"
+#define CHAT_ID ""
+
+FastBot bot(BOT_TOKEN);
 
 const uint16_t port = 1234;
 AsyncUDP udp;
@@ -41,17 +48,27 @@ uint32_t lastReceiveTime2 = millis();
 uint32_t lastReceiveTime3 = millis();
 uint32_t lastReceiveTime4 = millis();
 
+String B_IP = "0.0.0.0";
+String S_IP = "0.0.0.0";
+String M_IP = "0.0.0.0";
+String L_IP = "0.0.0.0";
+
 void checkClientsOnline();
 void statusHandler(AsyncWebServerRequest *request);
 void commandHandler(AsyncWebServerRequest *request);
 void indexHandler(AsyncWebServerRequest *request);
 void onPacketEvent(AsyncUDPPacket packet);
+void newMsg(FB_msg &msg);
+String IpAddress2String(const IPAddress& ipAddress);
+String StatusAnswer();
+
+
 char status[4];
- 
+
 AsyncWebServer server(80);
 
 //<i class="i_mask" style="-webkit-mask:center/contain no-repeat url(/Btu.svg);width:80px;height:80px;"></i>
-#pragma region 
+#pragma region
 static const char PROGMEM INDEX_HTML[] = R"rawliteral(
 <html>
 <head>
@@ -355,26 +372,26 @@ void setup()
   }
   */
 
-  WiFi.setHostname("HORIZONE");
-  #ifdef AP
+WiFi.setHostname("HORIZONE");
+#ifdef AP
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAP(ssid, password);
-  #else
+#else
   WiFi.mode(WIFI_MODE_STA);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-  delay(500);
-  Serial.print(".");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
   }
-  #endif
-  Serial.println(""); 
-
+#endif
+  Serial.println("");
 
   server.on("/", HTTP_GET, indexHandler);
   server.on("/status", HTTP_GET, statusHandler);
   server.on("/action", HTTP_GET, commandHandler);
- 
-  AsyncElegantOTA.begin(&server);    // Start ElegantOTA
+
+  AsyncElegantOTA.begin(&server); // Start ElegantOTA
 
   // Ожидаем соединения
 
@@ -384,54 +401,60 @@ void setup()
 
   server.begin();
   Serial.print("Server Ready! Go to: http://");
-  #ifdef AP
+#ifdef AP
   Serial.println(WiFi.softAPIP());
-  #else
+#else
   Serial.println(WiFi.localIP());
-  #endif
+#endif
 
   if (udp.listen(port))
   {
     Serial.print("UDP Listening on IP: ");
-      #ifdef AP
-      Serial.println(WiFi.softAPIP());
-      #else
-      Serial.println(WiFi.localIP());
-      #endif
+#ifdef AP
+    Serial.println(WiFi.softAPIP());
+#else
+    Serial.println(WiFi.localIP());
+#endif
     udp.onPacket(onPacketEvent);
   }
+
+  bot.setChatID(CHAT_ID);
+  bot.attach(newMsg);
+  bot.showMenu("STATUS");
+  bot.sendMessage(StatusAnswer());
 }
 
 void loop()
 {
-  GParser data(Lift_buf); //Парсим и отправляем по UART только мощность двигателя (значение из второй ячейки)
+  bot.tick();
+  GParser data(Lift_buf); // Парсим и отправляем по UART только мощность двигателя (значение из второй ячейки)
   int ints[data.amount()];
   data.parseInts(ints);
   Serial2.write(ints[2]);
 
-
-  #if AP
-  #else
-  while (WiFi.status() != WL_CONNECTED) {
+#if AP
+#else
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
-  #endif
+#endif
   AsyncElegantOTA.loop();
   checkClientsOnline();
   static uint32_t tmr = millis();
   if (millis() - tmr > 1000)
   {
     tmr = millis();
-    //char AP_ident[16];
-    //snprintf(AP_ident, sizeof(AP_ident), "$%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-    #ifdef AP
+// char AP_ident[16];
+// snprintf(AP_ident, sizeof(AP_ident), "$%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+#ifdef AP
     udp.broadcast(WiFi.softAPIP().toString().c_str());
     Serial.println(WiFi.softAPIP().toString().c_str());
-    #else
+#else
     udp.broadcast(WiFi.localIP().toString().c_str());
     Serial.println(WiFi.localIP().toString().c_str());
-    #endif
+#endif
   }
 }
 
@@ -446,12 +469,12 @@ void commandHandler(AsyncWebServerRequest *request)
   ///
   ///
   int rate = value.toInt();
-  #ifdef DEBUG
+#ifdef DEBUG
   Serial.print("go[String]: ");
   Serial.println(go);
   Serial.print("rate[int]: ");
   Serial.println(rate);
-  #endif
+#endif
 
   int a = rate * 128 / 100 + 127;
   int b = (100 - rate) * 127 / 100;
@@ -464,15 +487,14 @@ void commandHandler(AsyncWebServerRequest *request)
   snprintf(Mini_buf, sizeof(Mini_buf), "2,0,%d,%d,127,127,127;", SyncMode, ActiveCrane);
   snprintf(Lift_buf, sizeof(Lift_buf), "3,0,90,6;");
 
-
   switch (go[0])
   {
   case 'B': // Bridge
   case 'T': // Trolley
   case 'W': // Winch
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.println("Bridge working");
-    #endif
+#endif
     switch (go[1])
     {
     case 'f':
@@ -499,9 +521,9 @@ void commandHandler(AsyncWebServerRequest *request)
   case 'R': // Spreader Rotate
   case 'E': // Spreader Telescopes
   case 'X': // Spreader Twistlocks
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.println("Spreader working");
-    #endif
+#endif
     switch (go[1])
     {
     case 'c':
@@ -528,21 +550,23 @@ void commandHandler(AsyncWebServerRequest *request)
     break;
 
   case 'L': // Lifts
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.println("Lift working");
-    #endif
-    if (go[1] == 'u'){
+#endif
+    if (go[1] == 'u')
+    {
       snprintf(Lift_buf, sizeof(Lift_buf), "3,1,%d,6;", aa);
     }
-    else if (go[1] == 'd'){
+    else if (go[1] == 'd')
+    {
       snprintf(Lift_buf, sizeof(Lift_buf), "3,1,%d,6;", ab);
     }
     break;
 
   case 'M':
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.println("Cranes working");
-    #endif
+#endif
     switch (go[1])
     {
     case '2':
@@ -578,13 +602,13 @@ void commandHandler(AsyncWebServerRequest *request)
     }
     break;
   }
-  ///
-  #ifdef DEBUG
+///
+#ifdef DEBUG
   Serial.println(Bridge_buf);
   Serial.println(Spreader_buf);
   Serial.println(Mini_buf);
   Serial.println(Lift_buf);
-  #endif
+#endif
   ///
   sprintf(status, "%d%d%d%d", B_Online, S_Online, M_Online, L_Online);
   request->send(200, "text/plain", status);
@@ -593,8 +617,8 @@ void commandHandler(AsyncWebServerRequest *request)
 void indexHandler(AsyncWebServerRequest *request)
 {
   request->send(200, "text/html", INDEX_HTML);
-  //request->send(SPIFFS, "/index.html", "text/html");
-  //request->send(SPIFFS, "/index.html", String(), false);
+  // request->send(SPIFFS, "/index.html", "text/html");
+  // request->send(SPIFFS, "/index.html", String(), false);
 }
 
 void statusHandler(AsyncWebServerRequest *request)
@@ -620,8 +644,8 @@ void onPacketEvent(AsyncUDPPacket packet)
   Serial.print(", Length: ");
   Serial.print(packet.length());
   Serial.print(", Data: ");
-  //Serial.write(packet.data(), packet.length());
-  //packet.printf("Got %u bytes of data", packet.length());
+  // Serial.write(packet.data(), packet.length());
+  // packet.printf("Got %u bytes of data", packet.length());
   Serial.println();
 #endif
 
@@ -630,27 +654,32 @@ void onPacketEvent(AsyncUDPPacket packet)
   strncat(buf, (char *)packet.data(), packet.length());
   if (buf[0] == '_')
   {
-    int send=0;    switch (buf[1])
+    int send = 0;
+    switch (buf[1])
     {
     case 'B':
       B_Online = 1;
+      B_IP = IpAddress2String(packet.remoteIP());
       lastReceiveTime1 = millis();
       packet.printf(Bridge_buf, sizeof(Bridge_buf));
       break;
     case 'S':
       S_Online = 1;
+      S_IP = IpAddress2String(packet.remoteIP());
       lastReceiveTime2 = millis();
       packet.printf(Spreader_buf, sizeof(Spreader_buf));
       break;
     case 'M':
       M_Online = 1;
+      M_IP = IpAddress2String(packet.remoteIP());
       lastReceiveTime3 = millis();
       packet.printf(Mini_buf, sizeof(Mini_buf));
       break;
     case 'L':
       L_Online = 1;
+      L_IP = IpAddress2String(packet.remoteIP());
       lastReceiveTime4 = millis();
-      packet.printf(Lift_buf, sizeof(Lift_buf));   
+      packet.printf(Lift_buf, sizeof(Lift_buf));
       break;
     }
   }
@@ -659,8 +688,65 @@ void onPacketEvent(AsyncUDPPacket packet)
 void checkClientsOnline()
 {
   uint16_t interv = 1500;
-  if(millis() - lastReceiveTime1 > interv) B_Online = 0;
-  if(millis() - lastReceiveTime2 > interv) S_Online = 0;
-  if(millis() - lastReceiveTime3 > interv) M_Online = 2;
-  if(millis() - lastReceiveTime4 > interv) L_Online = 0;
+  if (millis() - lastReceiveTime1 > interv)
+    B_Online = 0;
+  if (millis() - lastReceiveTime2 > interv)
+    S_Online = 0;
+  if (millis() - lastReceiveTime3 > interv)
+    M_Online = 2;
+  if (millis() - lastReceiveTime4 > interv)
+    L_Online = 0;
+}
+
+void newMsg(FB_msg &msg)
+{
+  Serial.println("Message from BOT");
+  Serial.println(msg.toString());
+
+  if (msg.text == "STATUS")
+  {
+    String answer = "";
+    answer += "Connected to SSID:\t" + (String)ssid + "\n";
+    answer += "SSID password:\t" + (String)password + "\n\n";
+    answer += "Horizone base\thttp://" + IpAddress2String(WiFi.localIP()) + "\n";
+    answer += "Bridge is \t";     answer += B_Online ? "online\n" : "offline\n";
+    answer += "Spreader is \t";   answer += S_Online ? "online\n" : "offline\n";
+    answer += "Cranes is \t";     answer += M_Online ? "online\n" : "offline\n";
+    answer += "Lift is \t";       answer += L_Online ? "online\n" : "offline\n";
+    bot.sendMessage(answer);
+  }
+}
+
+String IpAddress2String(const IPAddress& ipAddress)
+{
+    return String(ipAddress[0]) + String(".") +
+           String(ipAddress[1]) + String(".") +
+           String(ipAddress[2]) + String(".") +
+           String(ipAddress[3]);
+}
+
+String StatusAnswer()
+{
+    String answer = "";
+    answer += "Connected to SSID:\t" + (String)ssid + "\n";
+    answer += "SSID password:\t" + (String)password + "\n\n";
+    answer += "🟢  Horizone base\thttp://" + IpAddress2String(WiFi.localIP()) + "\n";
+    answer += "🟢  Horizone base update\thttp://" + IpAddress2String(WiFi.localIP()) + "/update\n";
+    answer += B_Online == 1 ? "🟢" : "🔴";
+    answer += "  Bridge ";
+    answer += S_Online == 1 ? ("http://" + B_IP + "/update\n") : "\n";
+
+    answer += S_Online == 1 ? "🟢" : "🔴";
+    answer += "  Spreader ";
+    answer += S_Online == 1 ? ("http://" + S_IP + "/update\n") : "\n";
+
+    answer += M_Online == 1 ? "🟢" : "🔴";
+    answer += "  Cranes ";
+    answer += M_Online == 1 ? ("http://" + M_IP + "/update\n") : "\n";
+
+    answer += L_Online == 1 ? "🟢" : "🔴";
+    answer += "  Lift ";
+    answer += L_Online == 1 ? ("http://" + L_IP + "/update\n") : "\n";
+    
+    return(answer);
 }
