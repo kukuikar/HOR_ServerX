@@ -20,9 +20,10 @@ const char *password = "123456789";
 #define DEBUG
 #define SOFTAP
 // https://api.telegram.org/bot6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38/getUpdates
+// https://api.telegram.org/bot6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38/sendMessage?chat_id=@[MKD Horizon]&text=тест
 #define BOT_TOKEN "6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38"
 //#define CHAT_ID "213100274"
-#define CHAT_ID ""
+#define CHAT_ID "-1001765861822"
 
 FastBot bot(BOT_TOKEN);
 
@@ -705,15 +706,7 @@ void newMsg(FB_msg &msg)
 
   if (msg.text == "STATUS")
   {
-    String answer = "";
-    answer += "Connected to SSID:\t" + (String)ssid + "\n";
-    answer += "SSID password:\t" + (String)password + "\n\n";
-    answer += "Horizone base\thttp://" + IpAddress2String(WiFi.localIP()) + "\n";
-    answer += "Bridge is \t";     answer += B_Online ? "online\n" : "offline\n";
-    answer += "Spreader is \t";   answer += S_Online ? "online\n" : "offline\n";
-    answer += "Cranes is \t";     answer += M_Online ? "online\n" : "offline\n";
-    answer += "Lift is \t";       answer += L_Online ? "online\n" : "offline\n";
-    bot.sendMessage(answer);
+    bot.sendMessage(StatusAnswer());
   }
 }
 
@@ -734,7 +727,7 @@ String StatusAnswer()
     answer += "🟢  Horizone base update\thttp://" + IpAddress2String(WiFi.localIP()) + "/update\n";
     answer += B_Online == 1 ? "🟢" : "🔴";
     answer += "  Bridge ";
-    answer += S_Online == 1 ? ("http://" + B_IP + "/update\n") : "\n";
+    answer += B_Online == 1 ? ("http://" + B_IP + "/update\n") : "\n";
 
     answer += S_Online == 1 ? "🟢" : "🔴";
     answer += "  Spreader ";
