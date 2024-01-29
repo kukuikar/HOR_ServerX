@@ -8,7 +8,7 @@
 #include <GParser.h>
 #include <FastBot.h>
 
-#define MKD_Guest
+//#define MKD_Guest
 #ifdef MKD_Guest
 const char *ssid = "MKD-Guest";
 const char *password = "123Qweasd";
@@ -419,7 +419,7 @@ WiFi.setHostname("HORIZONE");
     udp.onPacket(onPacketEvent);
   }
 
-  bot.setChatID(CHAT_ID);
+  bot.setChatID("");
   bot.attach(newMsg);
   bot.showMenu("STATUS");
   bot.sendMessage(StatusAnswer());
@@ -703,10 +703,12 @@ void newMsg(FB_msg &msg)
 {
   Serial.println("Message from BOT");
   Serial.println(msg.toString());
-
+  bot.setChatID(msg.chatID);
+  //Serial.println(msg.chatID);
   if (msg.text == "STATUS")
-  {
+  {    
     bot.sendMessage(StatusAnswer());
+    bot.setChatID("");
   }
 }
 
