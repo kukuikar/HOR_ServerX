@@ -13,8 +13,8 @@
 const char *ssid = "MKD-Guest";
 const char *password = "123Qweasd";
 #else
-const char *ssid = "HOR";
-const char *password = "123456789";
+const char *ssid = "Keenetic-1649";
+const char *password = "jsCMnJpr";
 #endif
 
 #define DEBUG
