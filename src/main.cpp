@@ -447,15 +447,15 @@ void loop()
   if (millis() - tmr > 1000)
   {
     tmr = millis();
-    // char AP_ident[16];
-    // snprintf(AP_ident, sizeof(AP_ident), "$%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-    #ifdef AP
-      udp.broadcast(WiFi.softAPIP().toString().c_str());
-      Serial.println(WiFi.softAPIP().toString().c_str());
-    #else
-      udp.broadcast(WiFi.localIP().toString().c_str());
-      Serial.println(WiFi.localIP().toString().c_str());
-    #endif
+// char AP_ident[16];
+// snprintf(AP_ident, sizeof(AP_ident), "$%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+#ifdef AP
+    udp.broadcast(WiFi.softAPIP().toString().c_str());
+    Serial.println(WiFi.softAPIP().toString().c_str());
+#else
+    udp.broadcast(WiFi.localIP().toString().c_str());
+    Serial.println(WiFi.localIP().toString().c_str());
+#endif
   }
 }
 
