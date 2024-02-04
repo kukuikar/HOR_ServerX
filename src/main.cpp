@@ -8,14 +8,20 @@
 #include <GParser.h>
 #include <FastBot.h>
 
-//#define MKD_Guest
+#define Keenetic //dpe //MKD_Guest
 #ifdef MKD_Guest
 const char *ssid = "MKD-Guest";
 const char *password = "123Qweasd";
-#else
+#endif
+#ifdef Keenetic
 const char *ssid = "Keenetic-1649";
 const char *password = "jsCMnJpr";
 #endif
+#ifdef dpe
+const char *ssid = "dpe";
+const char *password = "11015385";
+#endif
+
 
 #define DEBUG
 #define SOFTAP
@@ -62,7 +68,6 @@ void onPacketEvent(AsyncUDPPacket packet);
 void newMsg(FB_msg &msg);
 String IpAddress2String(const IPAddress& ipAddress);
 String StatusAnswer();
-
 
 char status[4];
 
@@ -701,11 +706,12 @@ void checkClientsOnline()
 
 void newMsg(FB_msg &msg)
 {
+  if (msg.OTA) bot.update();
   Serial.println("Message from BOT");
   Serial.println(msg.toString());
   bot.setChatID(msg.chatID);
   //Serial.println(msg.chatID);
-  if (msg.text == "STATUS")
+  if (msg.text == "/status")
   {    
     bot.sendMessage(StatusAnswer());
     bot.setChatID("");
@@ -735,13 +741,13 @@ String StatusAnswer()
     answer += "  Spreader ";
     answer += S_Online == 1 ? ("http://" + S_IP + "/update\n") : "\n";
 
-    answer += M_Online == 1 ? "🟢" : "🔴";
-    answer += "  Cranes ";
-    answer += M_Online == 1 ? ("http://" + M_IP + "/update\n") : "\n";
+    //answer += M_Online == 1 ? "🟢" : "🔴";
+    //answer += "  Cranes ";
+    //answer += M_Online == 1 ? ("http://" + M_IP + "/update\n") : "\n";
 
-    answer += L_Online == 1 ? "🟢" : "🔴";
-    answer += "  Lift ";
-    answer += L_Online == 1 ? ("http://" + L_IP + "/update\n") : "\n";
+    //answer += L_Online == 1 ? "🟢" : "🔴";
+    //answer += "  Lift ";
+    //answer += L_Online == 1 ? ("http://" + L_IP + "/update\n") : "\n";
     
     return(answer);
 }
