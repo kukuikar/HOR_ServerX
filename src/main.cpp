@@ -28,8 +28,8 @@ const char *password = "11015385";
 // https://api.telegram.org/bot6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38/getUpdates
 // https://api.telegram.org/bot6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38/sendMessage?chat_id=@[MKD Horizon]&text=тест
 #define BOT_TOKEN "6514408612:AAHjaCKlpjAPjK9jXNL7CsVLWwlgp7QUF38"
-//#define CHAT_ID "213100274"
-#define CHAT_ID "-1001765861822"
+#define DPE_CHAT_ID "213100274"
+//#define CHAT_ID "-1001765861822"
 
 FastBot bot(BOT_TOKEN);
 
@@ -431,10 +431,10 @@ WiFi.setHostname("HORIZONE");
     udp.onPacket(onPacketEvent);
   }
 
-  bot.setChatID("");
+  //bot.setChatID("");
   bot.attach(newMsg);
-  bot.showMenu("STATUS");
-  bot.sendMessage(StatusAnswer());
+  //bot.showMenu("STATUS");
+  bot.sendMessage(StatusAnswer(), DPE_CHAT_ID);
 }
 
 void loop()
@@ -718,16 +718,17 @@ void preflight(AsyncWebServerRequest *request)
 
 void newMsg(FB_msg &msg)
 {
-  if (msg.OTA) bot.update();
   Serial.println("Message from BOT");
   Serial.println(msg.toString());
-  bot.setChatID(msg.chatID);
+  //bot.setChatID(msg.chatID);
   //Serial.println(msg.chatID);
   if (msg.text == "/status")
   {    
-    bot.sendMessage(StatusAnswer());
-    bot.setChatID("");
+    bot.sendMessage(StatusAnswer(), msg.chatID);
+    //bot.setChatID("");
   }
+
+  if (msg.OTA) bot.update();
 }
 
 String IpAddress2String(const IPAddress& ipAddress)
