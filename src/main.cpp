@@ -68,6 +68,8 @@ void onPacketEvent(AsyncUDPPacket packet);
 void newMsg(FB_msg &msg);
 String IpAddress2String(const IPAddress& ipAddress);
 String StatusAnswer();
+void preflight(AsyncWebServerRequest *request);
+
 
 char status[4];
 
@@ -396,6 +398,11 @@ WiFi.setHostname("HORIZONE");
   server.on("/", HTTP_GET, indexHandler);
   server.on("/status", HTTP_GET, statusHandler);
   server.on("/action", HTTP_GET, commandHandler);
+  server.on("/status", HTTP_OPTIONS, preflight);
+
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
 
   AsyncElegantOTA.begin(&server); // Start ElegantOTA
 
@@ -702,6 +709,11 @@ void checkClientsOnline()
     M_Online = 2;
   if (millis() - lastReceiveTime4 > interv)
     L_Online = 0;
+}
+
+void preflight(AsyncWebServerRequest *request)
+{
+  request->send(200, "text/plain", "kek");
 }
 
 void newMsg(FB_msg &msg)
