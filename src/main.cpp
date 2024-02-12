@@ -582,16 +582,25 @@ void commandHandler(AsyncWebServerRequest *request)
 #endif
     switch (go[1])
     {
-    case '2':
-      SyncMode = rate;
-      snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
-      break;
-    case '0':
-      ActiveCrane = 0;
-      snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
-      break;
-    case '1':
+    case '2': // crane 2
+      //SyncMode = rate;      
+      //snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
       ActiveCrane = 1;
+      SyncMode = 0;
+      snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
+      break;
+    case '0': // mirror mode
+      //ActiveCrane = 0;
+      //snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
+      ActiveCrane = 2;
+      SyncMode = 1;
+      snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
+      break;
+    case '1': // crane 1
+      //ActiveCrane = 1;
+      //snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
+      ActiveCrane = 0;
+      SyncMode = 0;
       snprintf(Mini_buf, sizeof(Mini_buf), "2,1,%d,%d,127,127,127;", SyncMode, ActiveCrane);
       break;
     case 'c':
@@ -754,9 +763,9 @@ String StatusAnswer()
     answer += "  Spreader ";
     answer += S_Online == 1 ? ("http://" + S_IP + "/update\n") : "\n";
 
-    //answer += M_Online == 1 ? "🟢" : "🔴";
-    //answer += "  Cranes ";
-    //answer += M_Online == 1 ? ("http://" + M_IP + "/update\n") : "\n";
+    answer += M_Online == 1 ? "🟢" : "🔴";
+    answer += "  Cranes ";
+    answer += M_Online == 1 ? ("http://" + M_IP + "/update\n") : "\n";
 
     //answer += L_Online == 1 ? "🟢" : "🔴";
     //answer += "  Lift ";
