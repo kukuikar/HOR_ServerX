@@ -8,7 +8,7 @@
 #include <GParser.h>
 #include <FastBot.h>
 
-#define Keenetic //dpe //MKD_Guest 123
+#define MKD_HORIZON //Keenetic //dpe //MKD_Guest 123
 #ifdef MKD_Guest
 const char *ssid = "MKD-Guest";
 const char *password = "123Qweasd";
@@ -20,6 +20,10 @@ const char *password = "jsCMnJpr";
 #ifdef dpe
 const char *ssid = "dpe";
 const char *password = "11015385";
+#endif
+#ifdef MKD_HORIZON
+const char *ssid = "MKD_HORIZON";
+const char *password = "123Qweasd";
 #endif
 
 
